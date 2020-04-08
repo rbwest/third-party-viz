@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<!--
+Copyright 2018 SAS Institute Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<html>
+<head>
+  <!-- Import D3.js -->
+  <script type="text/javascript" src="https://d3js.org/d3.v5.min.js"></script>
+
+  <!-- Import d3-tip -->
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3-tip/0.9.1/d3-tip.min.js"></script>
+
+  <!-- Import utilities  -->
+  <script type="text/javascript" src="../../util/messagingUtil.js"></script>
+  <script type="text/javascript" src="../../util/contentUtil.js"></script>
+</head>
+<body>
+<style type="text/css">
+  html, body, svg {
+    overflow: hidden;
+    margin: 0px;
+    width: 100%;
+    height: 100%;
+  }
+
+  text {
+    font-family: Verdana, sans-serif;
+  }
+
+  .data-path {
+    pointer-events: none;
+    stroke-width: 2;
+  }
+
+  .measure-label {
+    font-size: .8em;
+    dominant-baseline: hanging;
+  }
+
+  .d3-tip {
+    pointer-events: none !important;
+    background: white;
+    position: relative;
+    border: 1px solid #C4C4C4;
+    border-radius: 2px;
+  }
+
+  /* Create arrow on tooltip */
+  .d3-tip.n:before, .d3-tip.ne:before, .d3-tip.nw:before, .d3-tip.s:before, .d3-tip.se:before, .d3-tip.sw:before {
+    content: "";
+    position: absolute;
+    border-style: solid;
+    border-width: 5px 10px 5px 0;
+    border-color: transparent #C4C4C4;
+    transform-origin: 0% 0%;
+  }
+
+  .d3-tip.n:after, .d3-tip.ne:after, .d3-tip.nw:after, .d3-tip.s:after, .d3-tip.se:after, .d3-tip.sw:after {
+    content: "";
+    position: absolute;
+    border-style: solid;
+    border-width: 4px 8px 4px 0;
+    border-color: transparent #fff;
+    transform-origin: 0% 0%;
+  }
+
+  /* Move the arrow depending on direction */
+  /* North */
+  .d3-tip.n:before, .d3-tip.n:after {
+    top: 100%;
+    left: 50%;
+    transform: rotate(-90deg) translate(-10px, -5px);
+  }
+
+  .d3-tip.n:after {
+    transform: rotate(-90deg) translate(-7px, -4px);
+  }
+
+  /* North east */
+  .d3-tip.ne:before, .d3-tip.ne:after {
+    top: 100%;
+    left: 0%;
+    transform: rotate(-45deg) translate(-6px, -5px);
+  }
+
+  .d3-tip.ne:after {
+    transform: rotate(-45deg) translate(-3px, -4px);
+  }
+
+  /* North west */
+  .d3-tip.nw:before, .d3-tip.nw:after {
+    top: 100%;
+    left: 100%;
+    transform: rotate(-135deg) translate(-6px, -5px);
+  }
+
+  .d3-tip.nw:after {
+    transform: rotate(-135deg) translate(-3px, -4px);
+  }
+
+  /* South */
+  .d3-tip.s:before, .d3-tip.s:after {
+    top: 0%;
+    left: 50%;
+    transform: rotate(90deg) translate(-10px, -5px);
+  }
+
+  .d3-tip.s:after {
+    transform: rotate(90deg) translate(-7px, -4px);
+  }
+
+  /* South east */
+  .d3-tip.se:before, .d3-tip.se:after {
+    top: 0%;
+    left: 0%;
+    transform: rotate(45deg) translate(-6px, -5px);
+  }
+
+  .d3-tip.se:after {
+    transform: rotate(45deg) translate(-3px, -4px);
+  }
+
+  /* South west */
+  .d3-tip.sw:before, .d3-tip.sw:after {
+    top: 0%;
+    left: 100%;
+    transform: rotate(135deg) translate(-6px, -5px);
+  }
+
+  .d3-tip.sw:after {
+    transform: rotate(135deg) translate(-3px, -4px);
+  }
+
+  /* Style tip content */
+  .d3-tip-content {
+    white-space: nowrap;
+    font-family: Verdana, sans-serif;
+    font-size: .9em;
+    text-align: left;
+  }
+</style>
+
+<script>
+"use strict";
+
+document.addEventListener("DOMContentLoaded", function() {
+  /******************************************************* Declare variables *******************************************************/
+
+  // Static data variables
+  const SVG_ID = "radar"; // ID of SVG element
+  const SAMPLE_MESSAGE = {
+    version: "1",
+    resultName: "dd282",
+    rowCount: 3,
+    availableRowCount: 3,
+    data: [
+      ["Cool Factor", 2, "BEST12."],
+      ["Cost Efficiency", 5, "BEST12."],
+      ["Utility", 1, "BEST12."]
+    ],
+    columns: [
+      {
+        name: "bi285",
+        label: "Metric",
+        type: "string"
+      },
+      {
+        name: "bi286",
+        label: "Measure",
+        type: "number",
+        usage: "quantitative",
+        aggregation: "sum",
+        format: {
+          name: "BEST",
+          width: 12,
+          precision: 0,
+          formatString: "BEST12."
+        }
+      },
+      {
+        name: "bi287",
+        label: "Format",
+        type: "string"
+      }
+    ]
+  }; // Sample data message to render graph outside of VA for debugging
+  const OPACITY = {
+    fill:  0.2,
+    stroke: 0.6
+  }; // Various opacity values used during rendering
+  const MEASURE_MAXIMUM = 5; // Maximum possible value for measures
+
+  // Dynamic data variables
+  let VA_MESSAGE; // Data message to be received from VA
+  let VA_RESULT_NAME; // Result name required to send messages back to VA
+  let DATA; // Data to be parsed from VA data message
+  let OLD_DATA; // Data from previous render to track duplicate point
+  let METADATA = []; // Metadata to be parsed from VA data message
+  let OLD_METADATA; // Metadata from previous render to track duplicate point
+
+  let LAST_TRANSITION_END = Date.now(); // Time of last transition used to time transition callbacks
+
+  // Static dimension variables
+  const TRANS_TIME = 500; // Duration of major transitions
+  const TRANS_DELAY = 20; // Small buffer to ensure all callbacks have finished before allowing new transition
+  const HOVER_TRANS_TIME = 100; // Duration of focus transitions
+  const ENTER_REMOVE_TRANS_TIME = 200; // Duration of enter and exit transitions for data points and grid lines
+  const MEASURE_LABEL_PADDING = 10; // Padding between edge of radar chart and measure labels
+  const FILL = "#21b9b7";
+  const STROKE = "#1d9992";
+
+  // Dynamic dimension variables
+  let WIDTH; // Width of SVG element
+  let HEIGHT; // Height of SVG element
+  let RADIUS; // Radius of radar chart
+  let OLD_RADIUS; // Previous radius of chart used for tweening height changes
+  let DELTA_ANGLE; // Angle in radians between each measure on circle
+  let TOP_PAD; // Vertical padding for measure labels
+  let SIDE_PAD; // Horizontal padding for measure labels
+
+  // Selection and d3 variables
+  let SVG; // SVG selection
+  let G_CHART_AREA; // Chart area group selection
+  let G_GRID; // Grid lines group selection
+  let GRID_LINES; // Grid lines data-join
+  let GRID_CIRCLES; // Grid circles data-join
+  let MEASURE_LABELS; // Measure labels data-join
+  let DATA_PATHS; // Data paths data-join
+  let DATA_POINTS; // Data points data-join
+
+  // Tooltip variables
+  const TIP = {
+    self: undefined, // Tooltip object
+    dir: "n" // Tooltip direction
+  };
+
+  /*************************************************** Setup Callback Functions ***************************************************/
+
+  // Attach event for data message from VA
+  va.messagingUtil.setOnDataReceivedCallback(handleCallback);
+
+  // If not being rendered in iFrame (outside VA), render with sample data
+  if (!inIframe()) {
+    onDataReceived(SAMPLE_MESSAGE);
+  }
+
+  // Listen for resize event
+  va.contentUtil.setupResizeListener(drawElements);
+
+  /****************************************************** Callback Functions ******************************************************/
+
+  // Use timeouts to debounce update events
+  function handleCallback(messageFromVA) {
+    if (LAST_TRANSITION_END > Date.now()) {
+      setTimeout(function() {
+        onDataReceived(messageFromVA);
+      }, LAST_TRANSITION_END - Date.now());
+      LAST_TRANSITION_END = LAST_TRANSITION_END + TRANS_TIME + TRANS_DELAY;
+    } else {
+      onDataReceived(messageFromVA);
+      LAST_TRANSITION_END = Date.now() + TRANS_TIME + TRANS_DELAY;
+    }
+  }
+
+  // Take action on received data
+  function onDataReceived(messageFromVA) {
+    // Initialize data variables
+    VA_MESSAGE = messageFromVA;
+    VA_RESULT_NAME = messageFromVA.resultName;
+
+    // Validate data roles
+    if (
+      !va.contentUtil.validateRoles(
+        messageFromVA,
+        ["string", "number", "string"],
+        ["number"]
+      )
+    ) {
+      va.messagingUtil.postInstructionalMessage(
+        VA_RESULT_NAME,
+        "D3 Parks Radar Chart expects columns to be assigned in this order:\n" +
+          " 1. Metric (string)\n" +
+          " 2. Measure (number)\n" +
+          " 3. Format (string)"
+      );
+      return;
+    }
+
+    // Restructure metadata from data message
+    const numMeasures = VA_MESSAGE.data.length;
+    OLD_METADATA = METADATA;
+    DELTA_ANGLE = (2 * Math.PI) / numMeasures;
+
+    METADATA = {
+      metrics: {}
+    };
+
+    for (let i = 0; i < numMeasures; i++) {
+      METADATA.metrics[VA_MESSAGE.data[i][0]] = {
+        metric: VA_MESSAGE.data[i][0],
+        angle: i * DELTA_ANGLE,
+        format: translateFormat(VA_MESSAGE.data[i][2])
+      };
+    }
+
+    // Restructure data from 2d array to array of objects
+    let datum, metric;
+    OLD_DATA = DATA;
+    DATA = [];
+
+    for (let i = 0; i < numMeasures; i++) {
+      // Iterate over  metrics
+      DATA.push({
+        metric: VA_MESSAGE.data[i][0],
+        measure: VA_MESSAGE.data[i][1],
+        scaledMeasure:
+          VA_MESSAGE.data[i][1] / MEASURE_MAXIMUM
+      });
+    }
+
+    // Initialize chart if first draw, otherwise process data and update elements accordingly
+    if (d3.select("#" + SVG_ID).empty()) {
+      drawElements();
+    } else {
+      updateElements();
+    }
+  }
+
+  // Draw elements for first time and on resize event
+  function drawElements() {
+    // Return if data is not yet initialized
+    if (!DATA) {
+      return;
+    }
+
+    // Calculate dimensions for graph based on container dimensions
+    WIDTH = document.body.clientWidth;
+    HEIGHT = document.body.clientHeight;
+
+    // Append svg and save reference
+    d3.select("body")
+      .selectAll("#" + SVG_ID)
+      .data([DATA])
+      .enter()
+      .append("svg")
+      .attr("id", SVG_ID)
+      .each(function() {
+        // Initialize tooltip
+        TIP.self = d3
+          .tip()
+          .attr("class", "d3-tip")
+          .offset([-8, 0])
+          .html(function(d) {
+            return (
+              "<table class='d3-tip-content'> <tr> <td> " +
+              d.metric +
+              ":\t</td> <td>" +
+              METADATA.metrics[d.metric].format(d.measure) +
+              "</td> </tr> </table>"
+            );
+          });
+
+        d3.select(this).call(TIP.self);
+      });
+
+    SVG = d3.select("#" + SVG_ID);
+
+    // Calculate padding to prevent measure labels from being cutoff
+    calculatePadding();
+
+    // Determine radius
+    OLD_RADIUS = RADIUS;
+    RADIUS =
+      Math.min(WIDTH - 2 * SIDE_PAD, HEIGHT - 2 * TOP_PAD) / 2;
+
+    // Append/update chart-area group and save reference
+    SVG.selectAll(".g-chart-area")
+      .data([DATA])
+      .enter()
+      .append("g")
+      .classed("g-chart-area", true);
+
+    G_CHART_AREA = SVG.select(".g-chart-area").attr(
+      "transform",
+      "translate(" + WIDTH / 2 + ", " + (TOP_PAD + RADIUS) + ")"
+    );
+
+    // Append/update grid group and save reference
+    G_CHART_AREA.selectAll(".g-grid")
+      .data([DATA])
+      .enter()
+      .append("g")
+      .classed("g-grid", true);
+
+    G_GRID = G_CHART_AREA.select(".g-grid");
+
+    // Create grid lines
+    GRID_LINES = G_GRID.selectAll(".grid-line").data(
+      Object.values(METADATA.metrics),
+      function(d) {
+        return d.metric;
+      }
+    );
+
+    GRID_LINES.enter()
+      .append("line")
+      .classed("grid-line", true)
+      .attr("stroke", "#C4C4C4")
+      .attr("data-angle", function(d) {
+        return d.angle;
+      })
+      .attr("x1", 0)
+      .attr("y1", 0)
+      .merge(GRID_LINES)
+      .attr("x2", function(d) {
+        return RADIUS * Math.sin(d.angle);
+      })
+      .attr("y2", function(d) {
+        return -RADIUS * Math.cos(d.angle);
+      });
+
+    // Create grid circles
+    GRID_CIRCLES = G_GRID.selectAll(".grid-circle").data([
+      0.2,
+      0.4,
+      0.6,
+      0.8,
+      1
+    ]);
+
+    GRID_CIRCLES.enter()
+      .append("circle")
+      .classed("grid-circle", true)
+      .attr("fill", "none")
+      .attr("stroke", "#E4E4E4")
+      .attr("cx", 0)
+      .attr("cy", 0)
+      .merge(GRID_CIRCLES)
+      .attr("r", function(d) {
+        return d * RADIUS;
+      });
+
+    // Create measure labels
+    MEASURE_LABELS = G_CHART_AREA.selectAll(".measure-label").data(
+      Object.values(METADATA.metrics),
+      function(d) {
+        return d.metric;
+      }
+    );
+
+    MEASURE_LABELS.enter()
+      .append("text")
+      .classed("measure-label", true)
+      .text(function(d) {
+        return d.metric;
+      })
+      .attr("data-angle", function(d) {
+        return d.angle;
+      })
+      .attr("dx", function(d) {
+        return d.angle == 0 || d.angle == Math.PI
+          ? -this.getBBox().width / 2 + "px"
+          : d.angle > 0 && d.angle < Math.PI
+          ? 0 + "px"
+          : -this.getBBox().width + "px";
+      })
+      .attr("dy", function(d) {
+        return d.angle == Math.PI / 2 || d.angle == (3 * Math.PI) / 2
+          ? -this.getBBox().height / 2 + "px"
+          : d.angle > Math.PI / 2 && d.angle < (3 * Math.PI) / 2
+          ? 0 + "px"
+          : -this.getBBox().height + "px";
+      })
+      .merge(MEASURE_LABELS)
+      .attr("x", function(d) {
+        return (RADIUS + MEASURE_LABEL_PADDING) * Math.sin(d.angle);
+      })
+      .attr("y", function(d) {
+        return -(RADIUS + MEASURE_LABEL_PADDING) * Math.cos(d.angle);
+      });
+
+    // Create data paths + data points
+    DATA_PATHS = G_CHART_AREA.selectAll(".data-path").data([DATA]);
+
+    DATA_PATHS.enter()
+      .append("path")
+      .classed("data-path", true)
+      .attr("fill", FILL)
+      .attr("stroke", STROKE)
+      .attr("fill-opacity", OPACITY.fill)
+      .attr("stroke-opacity", OPACITY.stroke)
+      .merge(DATA_PATHS)
+      .attr("d", function(d) {
+        const dPath = d;
+        const points = [];
+        let path = "M ";
+        let x, y;
+        for (let j = 0; j < dPath.length; j++) {
+          x =
+            RADIUS * dPath[j].scaledMeasure * Math.sin(j * DELTA_ANGLE);
+          y =
+            -RADIUS *
+            dPath[j].scaledMeasure *
+            Math.cos(j * DELTA_ANGLE);
+          points.push({
+            metric: dPath[j].metric,
+            measure: dPath[j].measure,
+            scaledMeasure: dPath[j].scaledMeasure,
+            x: x,
+            y: y
+          });
+
+          path += x + "," + y + (j == dPath.length - 1 ? " Z" : " L ");
+        }
+
+        DATA_POINTS = G_CHART_AREA.selectAll(".data-point")
+          .data(points, function(d) {
+            return d;
+          });
+
+        DATA_POINTS.enter()
+          .append("circle")
+          .classed("data-point", true)
+          .attr("fill", FILL)
+          .attr("fill-opacity", OPACITY.stroke)
+          .on("mouseover", function(d) {
+            // Assign direction and show tooltip
+            TIP.self
+              .direction("n")
+              .offset([-8, 0])
+              .show(d, this)
+              .direction(getTipDirection())
+              .offset(getTipOffset())
+              .show(d, this);
+          })
+          .on("mouseout", TIP.self.hide)
+          .merge(DATA_POINTS)
+          .attr("cx", function(d) {
+            return d.x;
+          })
+          .attr("cy", function(d) {
+            return d.y;
+          })
+          .attr("r", 4);
+
+        return path;
+      });
+
+    // Move tooltip if present
+    d3.select(".tip")
+      .style("top", function() {
+        return RADIUS + TOP_PAD - this.height / 2 + "px";
+      })
+      .style("left", function() {
+        return WIDTH / 2 - this.width / 2 + "px";
+      });
+  }
+
+  // Redraw data dependent elements on data change
+  function updateElements() {
+    // Remove all elements
+    d3.select("#" + SVG_ID)
+      .selectAll("*")
+      .remove();
+
+    // Redraw elements
+    drawElements();
+  }
+
+  /******************************************************* Helper Functions *******************************************************/
+
+  // Determine whether or not page is being rendered in iFrame
+  function inIframe() {
+    try {
+      return window.self !== window.top;
+    } catch (e) {
+      return true;
+    }
+  }
+
+  // Determine direction for tooltip
+  function getTipDirection() {
+    const tip = d3.select(".d3-tip").node();
+    const w = tip.clientWidth;
+    const left = tip.offsetLeft;
+    const top = tip.offsetTop;
+    let dir;
+
+    dir = top < 0 ? "s" : "n";
+
+    if (left < 0) {
+      dir += "e";
+    } else if (left + w > WIDTH) {
+      dir += "w";
+    }
+    TIP.dir = dir;
+    return dir;
+  }
+
+  // Determine offset for tooltip based on direction
+  function getTipOffset() {
+    let offset;
+
+    switch (TIP.dir) {
+      case "n":
+        offset = [-8, 0];
+        break;
+      case "ne":
+        offset = [-5, 0];
+        break;
+      case "nw":
+        offset = [-5, 0];
+        break;
+      case "s":
+        offset = [8, 0];
+        break;
+      case "se":
+        offset = [5, 0];
+        break;
+      case "sw":
+        offset = [5, 0];
+        break;
+    }
+
+    return offset;
+  }
+
+  // Calculate padding to prevent measure labels from being cutoff
+  function calculatePadding() {
+    // Create dummy text variable to get measure label widths and HEIGHT
+    let height;
+    let width = 0;
+    SVG.selectAll(".dummyText")
+      .data(Object.values(METADATA.metrics))
+      .enter()
+      .append("text")
+      .classed("measure-label", true)
+      .text(function(d) {
+        return d.metric;
+      })
+      .each(function() {
+        height = this.getBBox().height;
+        width = Math.max(this.getComputedTextLength(), width);
+        this.remove();
+      });
+    SIDE_PAD = width + 2 * MEASURE_LABEL_PADDING;
+    TOP_PAD = height + 2 * MEASURE_LABEL_PADDING;
+  }
+
+  // Translate SAS format to D3 format
+  function translateFormat(formatString) {
+    if (formatString.indexOf(".") == formatString.length - 1) formatString += 0;
+
+    if (formatString.includes("DOLLAR"))
+      return d3.format(
+        formatString.replace("DOLLAR", "$").replace(".", ",.") + "f"
+      );
+    else if (formatString.includes("COMMA"))
+      return d3.format(
+        formatString.replace("COMMA", "").replace(".", ",.") + "f"
+      );
+    else if (formatString.includes("F"))
+      return d3.format(formatString.replace("F", "") + "f");
+    else if (formatString.includes("BEST"))
+      return d3.format(formatString.replace("BEST", "") + "f");
+    else if (formatString.includes("PERCENT"))
+      return d3.format(
+        formatString.replace("PERCENT", "").replace(".", ",.") + "%"
+      );
+  }
+
+  // Tween function for x coordinates on circle
+  function xTween(startRadius, endRadius, startAngle, endAngle) {
+    const interpolateRadius = d3.interpolate(startRadius, endRadius);
+    const interpolateAngle = d3.interpolate(startAngle, endAngle);
+    return function(t) {
+      const interpolatedRadius = interpolateRadius(t);
+      const interpolatedAngle = interpolateAngle(t);
+      return interpolatedRadius * Math.sin(interpolatedAngle);
+    };
+  }
+
+  // Tween functions for y coordinates on circle
+  function yTween(startRadius, endRadius, startAngle, endAngle) {
+    const interpolateRadius = d3.interpolate(startRadius, endRadius);
+    const interpolateAngle = d3.interpolate(startAngle, endAngle);
+    return function(t) {
+      const interpolatedRadius = interpolateRadius(t);
+      const interpolatedAngle = interpolateAngle(t);
+      return -interpolatedRadius * Math.cos(interpolatedAngle);
+    };
+  }
+});
+</script>
+</body>
+</html>
