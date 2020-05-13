@@ -427,6 +427,11 @@ document.addEventListener("DOMContentLoaded", function() {
   let EXTENT_RATIO;
 
   // Selection and d3 variables
+  d3.selection.prototype.moveToFront = function() {
+    return this.each(function() {
+      this.parentNode.appendChild(this);
+    });
+  }; // Bring element to front of SVG (from https://github.com/wbkd/d3-extended)
   let ZOOM; // D3 zoom object
   let SVG; // SVG selection
   let G_ZOOM; // Zoomable group element selection
@@ -543,8 +548,8 @@ document.addEventListener("DOMContentLoaded", function() {
       .enter()
       .append("svg")
       .attr("id", SVG_ID)
-      .call(ZOOM);
-      // .on("click", deselectAllElements);
+      .call(ZOOM)
+      .on("click", deselectAllElements);
 
     SVG = d3
       .select("#" + SVG_ID);
@@ -575,17 +580,19 @@ document.addEventListener("DOMContentLoaded", function() {
         .attr("stroke", "white");
 
       // Create hexagons
-      G_ZOOM.selectAll("path")
+      G_ZOOM.selectAll(".data-hex")
         .data(DATA)
         .enter()
         .append("path")
+        .classed("data-hex", true)
+        .classed("selectable", true)
         .attr("transform", d => `translate(${LONG_SCALE(d.x)}, ${LAT_SCALE(d.y)})`)
         .attr("d", d3.hexbin().radius(HEX_RADIUS_PIX).hexagon())
         .style("fill", d => COLOR_SCALE(d3.sum(d, d => d[2])))
         .style("stroke", "#696969")
         .style("stroke-width", HEX_RADIUS_PIX / 20)
-        .on("click", d => {console.log(d)});
-        // .on("click", selectElement);
+        // .on("click", d => {console.log(d)});
+        .on("click", selectElement);
 
       // Toggle drawing boolean off
       DRAWING = false;
@@ -601,6 +608,59 @@ document.addEventListener("DOMContentLoaded", function() {
     } catch (e) {
       return true;
     }
+  }
+
+  // Deselect all on svg click
+  function deselectAllElements() {
+    // Deselect all elements
+    d3.selectAll(".selectable")
+      .classed("selected", false)
+      .style("stroke-width", HEX_RADIUS_PIX / 20);
+
+    // Post message to VA
+    va.messagingUtil.postSelectionMessage(VA_RESULT_NAME, []);
+  }
+
+  // Handle selection on element
+  function selectElement() {
+    // Prevent event from falling through to underlying elements
+    d3.event.stopPropagation();
+
+    // If control is held toggle selected on click preserving array, otherwise select only clicked element
+    if (d3.event.ctrlKey) {
+      // Toggle selection on clicked element
+      d3.select(this).classed("selected", !d3.select(this).classed("selected"));
+    } else {
+      // Deselect all elements
+      d3.selectAll(".selectable").classed("selected", false);
+
+      // Select clicked element
+      d3.select(this).classed("selected", true);
+    }
+
+    // Update stroke widths
+    d3.selectAll(".selectable:not(.selected)")
+      .style("stroke-width", HEX_RADIUS_PIX / 20);
+
+    d3.selectAll(".selectable.selected")
+      .style("stroke-width", HEX_RADIUS_PIX / 10)
+      .moveToFront();
+
+    // Build array of selected elements
+    const selections = [];
+    d3.selectAll(".selectable").each(function(d) {
+      if (d3.select(this).classed("selected")) {
+        console.log(d);
+        d.forEach(d => {
+          selections.push({ row: d.index });
+        });
+      }
+    });
+
+    console.log(selections);
+
+    // Post message to VA
+    va.messagingUtil.postSelectionMessage(VA_RESULT_NAME, selections);
   }
 
   // Zoom event callback function
