@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<!--
+Copyright 2018 SAS Institute Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<html>
+<head>
+  <!-- Import D3.js -->
+  <script type="text/javascript" src="https://d3js.org/d3.v5.min.js"></script>
+  <script type="text/javascript" src="https://d3js.org/d3-hexbin.v0.2.min.js"></script>
+
+  <!-- Import utilities  -->
+  <script type="text/javascript" src="../../util/messagingUtil.js"></script>
+  <script type="text/javascript" src="../../util/contentUtil.js"></script>
+</head>
+<body>
+  <style type="text/css">
+  html, body, svg {
+    overflow: hidden;
+    margin: 0px;
+    width: 100%;
+    height: 100%;
+  }
+</style>
+
+<script>
+"use strict";
+
+document.addEventListener("DOMContentLoaded", function() {
+  /******************************************************* Declare variables *******************************************************/
+
+  // Static data variables
+  const SVG_ID = "hex-map"; // ID of SVG element
+  const SAMPLE_MESSAGE = {
+    version: "1",
+    resultName: "dd75",
+    rowCount: 6,
+    availableRowCount: 6,
+    data: [
+      [-121.9728, 38.3539, 100154],
+      [-87.8456, 42.5822, 100164],
+      [-100.4505, 31.4411, 100215],
+      [-74.2927, 40.5607, 100450],
+      [-74.3494, 40.504, 100693],
+      [-82.917, 42.5903, 100800],
+      [-87.5346, 33.2065, 101113],
+      [-117.2386, 33.1895, 101224],
+      [-86.269, 41.6769, 101860],
+      [-90.604, 41.5541, 102085],
+      [-122.192, 47.4761, 102153],
+      [-106.7897, 32.3264, 102926],
+      [-116.9604, 32.8017, 103241],
+      [-96.6631, 33.0997, 103383],
+      [-117.3883, 34.1118, 103440],
+      [-118.3264, 34.1901, 103695],
+      [-74.2004, 40.0771, 104157],
+      [-119.7356, 39.5544, 104246],
+      [-98.5259, 33.9067, 104576],
+      [-87.9842, 44.5207, 104879],
+      [-122.3106, 37.5603, 105025],
+      [-118.0835, 33.9076, 105120],
+      [-95.3059, 32.3173, 105729],
+      [-95.1091, 29.4901, 106244],
+      [-117.9099, 34.0559, 106311],
+      [-80.285, 26.0791, 106558],
+      [-96.9818, 33.0466, 106586],
+      [-116.3989, 43.6142, 106804],
+      [-122.465, 37.7009, 107008],
+      [-104.7697, 40.4153, 107348],
+      [-105.2519, 40.027, 107353],
+      [-120.4438, 34.9332, 107408],
+      [-73.0367, 41.5585, 108093],
+      [-122.9357, 45.528, 108389],
+      [-117.4676, 34.0026, 108393],
+      [-84.3687, 33.9315, 108797],
+      [-95.781, 36.0365, 109171],
+      [-118.3443, 33.9561, 109419],
+      [-108.5499, 45.7885, 109550],
+      [-122.3606, 37.9523, 110146],
+      [-122.4416, 45.5023, 110158],
+      [-81.9549, 28.0555, 110516],
+      [-104.8691, 39.5906, 110831],
+      [-119.2542, 34.2678, 111128],
+      [-122.1914, 47.9566, 111262],
+      [-89.6174, 40.7515, 111388],
+      [-80.1251, 26.7464, 111398],
+      [-121.7962, 37.9791, 111535],
+      [-71.3211, 42.639, 111670],
+      [-88.3217, 42.0396, 111683],
+      [-104.6123, 38.2699, 111750],
+      [-80.1339, 26.2416, 111954],
+      [-119.6849, 36.8282, 112022],
+      [-118.1309, 33.9382, 112269],
+      [-79.9905, 35.99, 112316],
+      [-71.4441, 42.9849, 112525],
+      [-80.2436, 25.9489, 113069],
+      [-80.065, 32.9178, 113237],
+      [-105.0644, 39.8822, 113479],
+      [-117.9123, 33.6659, 113615],
+      [-80.6626, 27.9856, 114194],
+      [-89.6446, 39.7911, 114694],
+      [-117.1317, 33.4931, 114742],
+      [-117.1904, 33.5721, 114985],
+      [-118.0291, 34.0746, 115586],
+      [-117.2828, 33.1239, 115877],
+      [-112.0008, 40.6024, 116046],
+      [-96.2964, 30.5852, 116218],
+      [-82.7666, 27.9789, 116478],
+      [-111.6448, 40.2453, 116702],
+      [-122.0321, 38.2593, 116884],
+      [-94.3521, 39.0855, 116925],
+      [-92.4772, 44.0154, 116961],
+      [-87.5347, 37.9877, 117963],
+      [-84.5593, 42.7143, 118427],
+      [-94.1453, 30.0849, 118428],
+      [-95.6142, 29.5994, 118600],
+      [-71.1187, 42.376, 118977],
+      [-105.1503, 39.8337, 120492],
+      [-102.3411, 31.8838, 120568],
+      [-96.7081, 32.9723, 120981],
+      [-75.4784, 40.5936, 121433],
+      [-122.2991, 37.867, 121643],
+      [-83.7309, 42.2761, 121890],
+      [-122.264, 38.1079, 121913],
+      [-95.3231, 29.5558, 122149],
+      [-117.3536, 34.5277, 122312],
+      [-72.6816, 41.7659, 122587],
+      [-77.8858, 34.2092, 122607],
+      [-99.7381, 32.4545, 122999],
+      [-92.328638, 38.951561, 123180],
+      [-97.3453, 35.2406, 123471],
+      [-96.829, 46.8652, 124844],
+      [-118.7485, 34.2669, 125851],
+      [-95.6962, 39.0347, 125904],
+      [-83.3701, 33.9496, 125964],
+      [-92.0285, 30.2074, 126143],
+      [-118.8742, 34.1933, 127690],
+      [-97.666, 30.5252, 128739],
+      [-74.1935, 40.6664, 128885],
+      [-121.9679, 37.3646, 129488],
+      [-122.2127, 47.388, 129618],
+      [-122.0016, 37.9722, 129688],
+      [-73.546, 41.0799, 129775],
+      [-72.925, 41.3108, 130418],
+      [-83.0303, 42.5812, 132964],
+      [-91.6778, 41.967, 133174],
+      [-80.898, 34.0291, 133451],
+      [-80.2593, 26.2707, 133507],
+      [-119.3289, 36.3273, 133800],
+      [-82.3461, 29.6788, 133857],
+      [-76.2971, 37.048, 134313],
+      [-83.025, 42.4929, 134587],
+      [-79.959, 32.8179, 136208],
+      [-112.0118, 40.6885, 136401],
+      [-96.8998, 32.9884, 136879],
+      [-112.4527, 33.6706, 138161],
+      [-97.186, 31.5601, 138183],
+      [-97.1414, 33.2166, 138541],
+      [-121.3189, 38.769, 139117],
+      [-104.9428, 39.9194, 139436],
+      [-117.8613, 33.787, 139484],
+      [-94.8195, 38.8843, 139605],
+      [-117.928, 33.8857, 139640],
+      [-84.1996, 39.7774, 140640],
+      [-80.3358, 25.977, 140823],
+      [-86.416, 35.8522, 141344],
+      [-118.1396, 34.1606, 141371],
+      [-102.1135, 32.0246, 142344],
+      [-76.1436, 43.041, 142749],
+      [-96.5888, 32.7629, 142816],
+      [-98.2464, 26.2322, 143433],
+      [-73.1958, 41.1874, 144900],
+      [-118.3414, 33.835, 145182],
+      [-74.1628, 40.9148, 145627],
+      [-81.1536, 32.0025, 145862],
+      [-89.0646, 42.2588, 146526],
+      [-122.1565, 47.5979, 147599],
+      [-88.1488, 41.5177, 148099],
+      [-88.162, 41.7492, 148304],
+      [-97.732, 31.0777, 149103],
+      [-117.074, 33.1331, 152213],
+      [-117.7611, 34.0585, 152361],
+      [-94.7418, 39.1225, 152958],
+      [-83.6942, 32.8088, 153095],
+      [-122.0263, 37.3858, 153185],
+      [-95.1506, 29.6586, 153219],
+      [-80.1646, 26.031, 154823],
+      [-72.54, 42.1155, 155032],
+      [-121.6337, 36.6902, 156259],
+      [-118.1054, 34.591, 156667],
+      [-87.3452, 36.5664, 156794],
+      [-105.1176, 39.6989, 156798],
+      [-118.1753, 34.6936, 159053],
+      [-122.1024, 37.6287, 159620],
+      [-77.0841, 38.8201, 160530],
+      [-90.2128, 32.3158, 164422],
+      [-105.0648, 40.5482, 167830],
+      [-93.2913, 37.1942, 168122],
+      [-78.8133, 35.7809, 168160],
+      [-117.5655, 33.862, 168819],
+      [-123.1162, 44.0567, 171245],
+      [-112.308, 33.7862, 172259],
+      [-80.3404, 26.021, 172374],
+      [-117.9605, 33.7788, 172646],
+      [-121.385, 38.4146, 172886],
+      [-123.0232, 44.9237, 173442],
+      [-117.3062, 33.2245, 176080],
+      [-122.7061, 38.4468, 177586],
+      [-117.5642, 34.1233, 177751],
+      [-76.522, 37.0762, 178626],
+      [-71.4188, 41.8231, 179335],
+      [-85.2484, 35.066, 180557],
+      [-117.6042, 34.0394, 181107],
+      [-96.732, 43.5383, 181883],
+      [-80.1467, 26.1412, 182595],
+      [-122.5957, 45.6349, 183012],
+      [-97.455, 25.9991, 183392],
+      [-71.8078, 42.2695, 185877],
+      [-83.9493, 35.9707, 187500],
+      [-96.8226, 33.1554, 188170],
+      [-93.7922, 32.4669, 188987],
+      [-81.9974, 26.6432, 189343],
+      [-88.1002, 30.6684, 189572],
+      [-96.668, 33.1985, 191645],
+      [-111.9318, 33.3884, 192364],
+      [-94.6906, 38.889, 192536],
+      [-84.2534, 30.4551, 193551],
+      [-84.8749, 32.5102, 194160],
+      [-97.0211, 32.6869, 194614],
+      [-80.3883, 27.2806, 195248],
+      [-82.0734, 33.3655, 196939],
+      [-86.673, 34.699, 197318],
+      [-92.3586, 34.7254, 197881],
+      [-81.5214, 41.0805, 198006],
+      [-86.2661, 32.3472, 198218],
+      [-88.2901, 41.7635, 199602],
+      [-73.8674, 40.9459, 199663],
+      [-101.8302, 35.1999, 199924],
+      [-85.6556, 42.9612, 200217],
+      [-111.931, 40.7769, 200591],
+      [-118.0093, 33.6906, 200641],
+      [-118.2458, 34.1814, 201361],
+      [-77.6169, 43.1699, 206284],
+      [-117.2057, 33.9233, 209050],
+      [-78.9735, 35.0828, 209468],
+      [-119.2046, 34.2023, 209877],
+      [-86.799, 33.5274, 209880],
+      [-118.5042, 34.403, 210089],
+      [-117.4629, 34.109, 213739],
+      [-121.003, 37.6375, 215030],
+      [-117.2936, 34.1416, 215941],
+      [-122.4598, 47.2522, 216279],
+      [-93.6102, 41.5726, 216853],
+      [-117.4333, 47.6669, 219190],
+      [-91.1309, 30.4422, 221599],
+      [-77.476, 37.5314, 228783],
+      [-116.2317, 43.6002, 228790],
+      [-121.9412, 37.4945, 237807],
+      [-80.3029, 25.8699, 238942],
+      [-96.97, 32.8577, 242242],
+      [-96.6303, 32.9098, 242507],
+      [-76.3018, 36.6794, 242634],
+      [-76.2446, 36.923, 244076],
+      [-115.0939, 36.2857, 245949],
+      [-80.261, 36.1027, 246328],
+      [-111.7431, 33.3103, 248279],
+      [-112.1899, 33.5331, 250702],
+      [-119.8499, 39.5491, 250998],
+      [-111.8611, 33.6843, 255310],
+      [-101.8867, 33.5656, 255885],
+      [-78.8597, 42.8925, 256304],
+      [-111.8549, 33.2829, 257165],
+      [-89.4299, 43.0878, 258054],
+      [-99.4892, 27.5604, 261639],
+      [-82.6441, 27.762, 265098],
+      [-74.0648, 40.7114, 265549],
+      [-85.1439, 41.0882, 267633],
+      [-117.0152, 32.6277, 271651],
+      [-78.9029, 35.9811, 274291],
+      [-83.5819, 41.6641, 274975],
+      [-74.1726, 40.7242, 282090],
+      [-117.7713, 33.6784, 282572],
+      [-81.2736, 28.4166, 285713],
+      [-96.6803, 40.8105, 287401],
+      [-96.7479, 33.0508, 288061],
+      [-149.2843, 61.1743, 291538],
+      [-79.827, 36.0951, 294722],
+      [-79.9766, 40.4398, 301048],
+      [-84.5058, 39.1402, 302605],
+      [-90.2446, 38.6357, 302838],
+      [-93.1041, 44.9489, 307695],
+      [-115.0357, 36.0097, 310390],
+      [-121.3133, 37.9763, 311178],
+      [-84.4583, 38.0407, 323780],
+      [-97.1734, 27.7543, 326554],
+      [-117.3932, 33.9381, 330063],
+      [-117.883, 33.7363, 332725],
+      [-157.8476, 21.3243, 347397],
+      [-117.7601, 33.8555, 352005],
+      [-104.6897, 39.688, 374114],
+      [-119.0183, 35.3212, 383579],
+      [-81.6794, 41.4785, 383793],
+      [-97.3459, 37.6907, 389255],
+      [-89.9345, 30.0534, 391006],
+      [-82.4797, 27.9701, 392890],
+      [-97.1247, 32.7007, 398112],
+      [-95.9023, 36.1279, 400669],
+      [-93.2683, 44.9633, 425403],
+      [-122.2257, 37.7698, 429082],
+      [-76.0252, 36.78, 450189],
+      [-118.1553, 33.8092, 467354],
+      [-96.0451, 41.2644, 468262],
+      [-78.6418, 35.8306, 469298],
+      [-80.2086, 25.7752, 470914],
+      [-104.7607, 38.8673, 472688],
+      [-94.551, 39.1251, 491918],
+      [-84.4227, 33.7629, 498044],
+      [-121.4686, 38.5666, 508529],
+      [-111.7174, 33.4019, 508958],
+      [-119.7934, 36.7836, 530093],
+      [-110.8706, 32.1531, 545975],
+      [-106.6474, 35.1056, 560218],
+      [-87.9667, 43.0633, 592025],
+      [-76.6105, 39.3, 602495],
+      [-85.6474, 38.1654, 620118],
+      [-115.2601, 36.2292, 644644],
+      [-97.5137, 35.4671, 649021],
+      [-89.9774, 35.1028, 650618],
+      [-122.65, 45.537, 653115],
+      [-86.785, 36.1718, 669053],
+      [-83.1022, 42.383, 672662],
+      [-106.427, 31.8484, 682669],
+      [-71.0202, 42.332, 694583],
+      [-77.0172, 38.9041, 702455],
+      [-104.8811, 39.7619, 716492],
+      [-122.3509, 47.6205, 744955],
+      [-86.1459, 39.7767, 867125],
+      [-80.831, 35.2078, 872498],
+      [-123.0322, 37.7272, 883305],
+      [-82.9848, 39.9852, 892533],
+      [-97.3467, 32.7815, 895008],
+      [-81.6616, 30.3369, 903889],
+      [-97.7544, 30.3039, 964254],
+      [-121.8189, 37.2967, 1030119],
+      [-96.7665, 32.7933, 1345047],
+      [-117.135, 32.8153, 1425976],
+      [-98.5251, 29.4724, 1532233],
+      [-75.1333, 40.0094, 1584138],
+      [-112.0901, 33.5722, 1660272],
+      [-95.3909, 29.7866, 2325502],
+      [-87.6818, 41.8376, 2705994],
+      [-118.4108, 34.0194, 3990456],
+      [-73.9387, 40.6635, 8398748]
+    ],
+    columns: [
+      {
+        name: "bi78",
+        label: "Lat",
+        type: "number",
+        usage: "quantitative",
+        aggregation: "totalCount",
+        format: {
+          name: "COMMA",
+          width: 12,
+          precision: 0,
+          formatString: "COMMA12."
+        }
+      },
+      {
+        name: "bi79",
+        label: "Long",
+        type: "number",
+        usage: "quantitative",
+        aggregation: "totalCount",
+        format: {
+          name: "COMMA",
+          width: 12,
+          precision: 0,
+          formatString: "COMMA12."
+        }
+      },
+      {
+        name: "bi80",
+        label: "Population",
+        type: "number",
+        usage: "quantitative",
+        aggregation: "totalCount",
+        format: {
+          name: "COMMA",
+          width: 12,
+          precision: 0,
+          formatString: "COMMA12."
+        }
+      }
+    ]
+  }; // Sample data message to render graph outside of VA for debugging
+  let DRAWING = false;
+
+  // Dynamic data variables
+  let VA_MESSAGE; // Data message to be received from VA
+  let VA_RESULT_NAME; // Result name required to send messages back to VA
+  let DATA; // Data to be parsed from VA data message
+  let BINS; // Binned data
+
+  // Static dimension variables
+  const TRANS_TIME = 500; // Duration of transitions
+  const PROJECTION_AR = 2; // Aspect ratio (width / height) of chosen projection (equirectangular)
+
+  // Dynamic dimension variables
+  let WIDTH; // Width of SVG element
+  let HEIGHT; // Height of SVG element
+  let HEX_RADIUS_DEG = .5; // Radius (in degrees) used to create hexagons
+  let HEX_RADIUS_PIX; // Radius (in pixels) used to draw hexagons
+  let LAT_SCALE; // Lat -> y in pixels
+  let LONG_SCALE; // Long -> x in pixels'
+  let EXTENT_RATIO;
+
+  // Selection and d3 variables
+  d3.selection.prototype.moveToFront = function() {
+    return this.each(function() {
+      this.parentNode.appendChild(this);
+    });
+  }; // Bring element to front of SVG (from https://github.com/wbkd/d3-extended)
+  let ZOOM; // D3 zoom object
+  let SVG; // SVG selection
+  let G_ZOOM; // Zoomable group element selection
+  let COLOR_SCALE; // D3 linear scale for hexagon colors
+  let HEXAGONS; // Hexagon paths selection
+  let HEX_BIN = d3.hexbin().radius(HEX_RADIUS_DEG); // Hexbin generator
+
+  /*************************************************** Setup Callback Functions ***************************************************/
+
+  // Attach event for data message from VA
+  va.messagingUtil.setOnDataReceivedCallback(onDataReceived);
+
+  // If not being rendered in iFrame (outside VA), render with sample data
+  if (!inIframe()) {
+    onDataReceived(SAMPLE_MESSAGE);
+  }
+
+  // Listen for resize event
+  va.contentUtil.setupResizeListener(drawElements);
+
+  /****************************************************** Callback Functions ******************************************************/
+
+  // Take action on received data
+  function onDataReceived(messageFromVA) {
+    // Initialize data variables
+    VA_MESSAGE = messageFromVA;
+    VA_RESULT_NAME = messageFromVA.resultName;
+
+    // Validate data roles
+    if (
+      !va.contentUtil.validateRoles(
+        messageFromVA,
+        ["number", "number", "number"],
+        ["number"]
+      )
+    ) {
+      va.messagingUtil.postInstructionalMessage(
+        VA_RESULT_NAME,
+        "D3 Hex Bin Chart expects columns to be assigned in this order:\n" +
+          " 1. Longitude (number - category)\n" +
+          " 2. Latitude (number - category)\n" +
+          " 3. Count (number)"
+      );
+      return;
+    }
+
+    // Attach index for selections
+    VA_MESSAGE.data.forEach((d, i) => {
+      d.index = i;
+    });
+
+    // Bin data using hex bin generator
+    DATA = HEX_BIN(VA_MESSAGE.data);
+
+    // Create color scale
+    COLOR_SCALE = d3.scaleLinear()
+      .domain([
+        d3.min(DATA, d => d3.sum(d, d => d[2])),
+        d3.max(DATA, d => d3.sum(d, d => d[2]))
+      ])
+      .range(["#fffbcf", "#f7ad22"]);
+
+    // Draw elements
+    drawElements();
+  }
+
+  // Draw elements for first time and on resize event
+  function drawElements() {
+    // Return if data is not yet initialized
+    if (!DATA || DRAWING) {
+      return;
+    }
+
+    // Toggle drawing boolean on
+    DRAWING = true;
+
+    // Calculate dimensions for graph based on container dimensions
+    WIDTH = window.innerWidth;
+    HEIGHT = window.innerHeight;
+
+    // Create lat and long scales
+    LONG_SCALE = d3.scaleLinear()
+      .domain([-180, 180])
+      .range([
+        WIDTH / HEIGHT > PROJECTION_AR ? WIDTH / 2 - (PROJECTION_AR * HEIGHT) / 2 : 0,
+        WIDTH / HEIGHT > PROJECTION_AR ? WIDTH / 2 + (PROJECTION_AR * HEIGHT) / 2 : WIDTH,
+      ]);
+
+    LAT_SCALE = d3.scaleLinear()
+      .domain([-90, 90])
+      .range([
+        WIDTH / HEIGHT > PROJECTION_AR ? HEIGHT : HEIGHT / 2 + (WIDTH / PROJECTION_AR) / 2,
+        WIDTH / HEIGHT > PROJECTION_AR ? 0 : HEIGHT / 2 - (WIDTH / PROJECTION_AR) / 2,
+      ]);
+
+    HEX_RADIUS_PIX = HEX_RADIUS_DEG * (LAT_SCALE.range()[0] - LAT_SCALE.range()[1]) / 180;
+
+    // Init zoom
+    ZOOM = d3.zoom()
+      .on("zoom", zoomed)
+      .scaleExtent([1, 5])
+      .translateExtent([
+        [LONG_SCALE(-180), LAT_SCALE(90)],
+        [LONG_SCALE(180), LAT_SCALE(-90)]
+      ]);
+
+    // Remove SVG if present
+    d3.select("body").select("#" + SVG_ID).remove();
+
+    // Append svg and save reference
+    d3.select("body")
+      .selectAll("#" + SVG_ID)
+      .data([DATA])
+      .enter()
+      .append("svg")
+      .attr("id", SVG_ID)
+      .call(ZOOM)
+      .on("click", deselectAllElements);
+
+    SVG = d3
+      .select("#" + SVG_ID);
+
+    // Append/update zoom group and save reference
+    SVG.selectAll(".g-zoom")
+      .data([DATA])
+      .enter()
+      .append("g")
+      .classed("g-zoom", true);
+
+    G_ZOOM = SVG.select(".g-zoom");
+
+
+    // ********************************************************************************************
+    var projection = d3.geoEquirectangular()
+      .translate([WIDTH / 2, HEIGHT / 2])
+      .scale(Math.min(WIDTH / PROJECTION_AR / Math.PI, HEIGHT / Math.PI));
+    var path = d3.geoPath().projection(projection);
+
+    // var url = "http://enjalot.github.io/wwsd/data/world/world-110m.geojson";
+    var url = "./countries.geojson";
+
+    d3.json(url).then((data) => {
+
+      G_ZOOM.append("path")
+        .attr("d", path(data))
+        .attr("fill", "lightgray")
+        .attr("stroke", "white");
+
+      // Create hexagons
+      G_ZOOM.selectAll(".data-hex")
+        .data(DATA)
+        .enter()
+        .append("path")
+        .classed("data-hex", true)
+        .classed("selectable", true)
+        .attr("transform", d => `translate(${LONG_SCALE(d.x)}, ${LAT_SCALE(d.y)})`)
+        .attr("d", d3.hexbin().radius(HEX_RADIUS_PIX).hexagon())
+        .style("fill", d => COLOR_SCALE(d3.sum(d, d => d[2])))
+        .style("stroke", "#696969")
+        .style("stroke-width", HEX_RADIUS_PIX / 20)
+        .on("click", selectElement);
+
+      // Toggle drawing boolean off
+      DRAWING = false;
+    });
+  }
+
+  /******************************************************* Helper Functions *******************************************************/
+
+  // Determine whether or not page is being rendered in iFrame
+  function inIframe() {
+    try {
+      return window.self !== window.top;
+    } catch (e) {
+      return true;
+    }
+  }
+
+  // Deselect all on svg click
+  function deselectAllElements() {
+    // Deselect all elements
+    d3.selectAll(".selectable")
+      .classed("selected", false)
+      .style("stroke-width", HEX_RADIUS_PIX / 20);
+
+    // Post message to VA
+    va.messagingUtil.postSelectionMessage(VA_RESULT_NAME, []);
+  }
+
+  // Handle selection on element
+  function selectElement() {
+    // Prevent event from falling through to underlying elements
+    d3.event.stopPropagation();
+
+    // If control is held toggle selected on click preserving array, otherwise select only clicked element
+    if (d3.event.ctrlKey) {
+      // Toggle selection on clicked element
+      d3.select(this).classed("selected", !d3.select(this).classed("selected"));
+    } else {
+      // Deselect all elements
+      d3.selectAll(".selectable").classed("selected", false);
+
+      // Select clicked element
+      d3.select(this).classed("selected", true);
+    }
+
+    // Update stroke widths
+    d3.selectAll(".selectable:not(.selected)")
+      .style("stroke-width", HEX_RADIUS_PIX / 20);
+
+    d3.selectAll(".selectable.selected")
+      .style("stroke-width", HEX_RADIUS_PIX / 10)
+      .moveToFront();
+
+    // Build array of selected elements
+    const selections = [];
+    d3.selectAll(".selectable").each(function(d) {
+      if (d3.select(this).classed("selected")) {
+        d.forEach(d => {
+          selections.push({ row: d.index });
+        });
+      }
+    });
+
+    // Post message to VA
+    va.messagingUtil.postSelectionMessage(VA_RESULT_NAME, selections);
+  }
+
+  // Zoom event callback function
+  function zoomed() {
+    G_ZOOM.attr("transform", d3.event.transform);
+  }
+});
+</script>
+</body>
+</html>
