@@ -1,0 +1,117 @@
+.d3-tip {
+  pointer-events: none !important;
+  background: white;
+  position: relative;
+  border: 1px solid #c4c4c4;
+  border-radius: 2px;
+}
+
+/* Create arrow on tooltip */
+.d3-tip.n:before,
+.d3-tip.ne:before,
+.d3-tip.nw:before,
+.d3-tip.s:before,
+.d3-tip.se:before,
+.d3-tip.sw:before {
+  content: "";
+  position: absolute;
+  border-style: solid;
+  border-width: 5px 10px 5px 0;
+  border-color: transparent #c4c4c4;
+  transform-origin: 0% 0%;
+}
+
+.d3-tip.n:after,
+.d3-tip.ne:after,
+.d3-tip.nw:after,
+.d3-tip.s:after,
+.d3-tip.se:after,
+.d3-tip.sw:after {
+  content: "";
+  position: absolute;
+  border-style: solid;
+  border-width: 4px 8px 4px 0;
+  border-color: transparent #fff;
+  transform-origin: 0% 0%;
+}
+
+/* Move the arrow depending on direction */
+/* North */
+.d3-tip.n:before,
+.d3-tip.n:after {
+  top: 100%;
+  left: 50%;
+  transform: rotate(-90deg) translate(-10px, -5px);
+}
+
+.d3-tip.n:after {
+  transform: rotate(-90deg) translate(-7px, -4px);
+}
+
+/* North east */
+.d3-tip.ne:before,
+.d3-tip.ne:after {
+  top: 100%;
+  left: 0%;
+  transform: rotate(-45deg) translate(-6px, -5px);
+}
+
+.d3-tip.ne:after {
+  transform: rotate(-45deg) translate(-3px, -4px);
+}
+
+/* North west */
+.d3-tip.nw:before,
+.d3-tip.nw:after {
+  top: 100%;
+  left: 100%;
+  transform: rotate(-135deg) translate(-6px, -5px);
+}
+
+.d3-tip.nw:after {
+  transform: rotate(-135deg) translate(-3px, -4px);
+}
+
+/* South */
+.d3-tip.s:before,
+.d3-tip.s:after {
+  top: 0%;
+  left: 50%;
+  transform: rotate(90deg) translate(-10px, -5px);
+}
+
+.d3-tip.s:after {
+  transform: rotate(90deg) translate(-7px, -4px);
+}
+
+/* South east */
+.d3-tip.se:before,
+.d3-tip.se:after {
+  top: 0%;
+  left: 0%;
+  transform: rotate(45deg) translate(-6px, -5px);
+}
+
+.d3-tip.se:after {
+  transform: rotate(45deg) translate(-3px, -4px);
+}
+
+/* South west */
+.d3-tip.sw:before,
+.d3-tip.sw:after {
+  top: 0%;
+  left: 100%;
+  transform: rotate(135deg) translate(-6px, -5px);
+}
+
+.d3-tip.sw:after {
+  transform: rotate(135deg) translate(-3px, -4px);
+}
+
+/* Style tip content */
+.d3-tip-content {
+  white-space: nowrap;
+  font-family: Verdana, sans-serif;
+  font-size: 0.9em;
+  text-align: left;
+}

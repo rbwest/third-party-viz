@@ -1,0 +1,27 @@
+.legend-title {
+  font-size: 0.9em;
+  font-weight: bold;
+  text-anchor: middle;
+  dominant-baseline: hanging;
+}
+
+.legend-text {
+  font-size: 0.8em;
+  dominant-baseline: central;
+}
+
+.legend-rect {
+  stroke-width: 1;
+}
+
+.g-legend-entry.selectable {
+  cursor: pointer;
+}
+
+.g-legend-entry.selectable.selected .legend-text {
+  font-weight: bold;
+}
+
+.g-legend-entry.selectable.selected .legend-rect {
+  stroke-width: 2px;
+}

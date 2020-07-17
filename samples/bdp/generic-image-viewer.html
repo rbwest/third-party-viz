@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<!--
+Copyright 2018 SAS Institute Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<html>
+<head>
+  <!-- Import D3.js -->
+  <script type="text/javascript" src="https://d3js.org/d3.v5.min.js"></script>
+
+  <!-- Import utilities  -->
+  <script type="text/javascript" src="../../util/messagingUtil.js"></script>
+  <script type="text/javascript" src="../../util/contentUtil.js"></script>
+</head>
+<body>
+  <style type="text/css">
+  html, body {
+    font-family: Verdana, sans-serif;
+    font-size: 1.0em;
+    overflow: hidden;
+    margin: 0px;
+    width: 100%;
+    height: 100%;
+  }
+
+  .slide {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100vh;
+    background: #444444;
+  }
+
+  .slide img {
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  .prev, .next {
+    cursor: pointer;
+    position: absolute;
+    top: 50%;
+    width: auto;
+    padding: 16px;
+    margin-top: -22px;
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+    transition: 0.6s ease;
+    border-radius: 0 3px 3px 0;
+    user-select: none;
+  }
+
+  .next {
+    right: 0;
+    border-radius: 3px 0 0 3px;
+  }
+
+  .prev:hover, .next:hover {
+    background-color: rgba(0, 0, 0, 0.6);
+  }
+
+  .index-text {
+    color: #f2f2f2;
+    padding: 8px 12px;
+    position: absolute;
+    top: 0;
+  }
+
+  .index-text input {
+    width: 50px;
+    font-family: Verdana, sans-serif;
+    font-size: 1.0em;
+    color: #ffffff;
+    border-width:0px;
+    border:none;
+    background-color: #555555;
+  }
+
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+</style>
+
+<div class="index-text slide-ui-el">
+  <input type="number" value="1" min="1" max="1" onchange="goToSlide()">
+  <span> / 1</span>
+</div>
+<div class="slideshow">
+  <a class="prev slide-ui-el" onclick="offsetSlide(-1)">&#10094;</a>
+  <a class="next slide-ui-el" onclick="offsetSlide(+1)">&#10095;</a>
+</div>
+
+<script>
+"use strict";
+
+document.addEventListener("DOMContentLoaded", function() {
+  /******************************************************* Declare variables *******************************************************/
+
+  // Static data variables
+  const SAMPLE_MESSAGE = {
+    "version": "1",
+    "resultName": "dd703",
+    "rowCount": 4,
+    "availableRowCount": 4,
+    "data": [
+        [
+            "https://cdn.pixabay.com/photo/2017/03/05/00/34/panorama-2117310_960_720.jpg",
+            "Saturday, June 6, 2020 04:00:00 AM"
+        ],
+        [
+            "https://cdn.pixabay.com/photo/2020/03/11/10/08/camera-4921646_960_720.jpg",
+            "Saturday, June 6, 2020 04:00:00 AM"
+        ],
+        [
+            "https://cdn.pixabay.com/photo/2020/03/09/23/59/istanbul-4917447_960_720.jpg",
+            "Saturday, June 6, 2020 04:00:00 AM"
+        ],
+        [
+            "https://cdn.pixabay.com/photo/2020/03/01/17/50/monalisa-4893660_960_720.jpg",
+            "Saturday, June 6, 2020 04:00:00 AM"
+        ]
+    ],
+    "columns": [
+        {
+            "name": "bi705",
+            "label": "ImageLocation",
+            "type": "string"
+        },
+        {
+            "name": "bi704",
+            "label": "DateTimeStamp",
+            "type": "datetime",
+            "usage": "categorical",
+            "format": {
+                "name": "DATETIME",
+                "width": 19,
+                "precision": 0,
+                "formatString": "DATETIME19"
+            }
+        }
+    ]
+}; // Sample data message to render graph outside of VA for debugging
+
+  // Dynamic data variables
+  let VA_RESULT_NAME; // Result name required to send messages back to VA
+  let DATA; // Data to be parsed from VA data message
+
+  // Static dimension variables
+
+  // Dynamic dimension variables
+  let WIDTH; // Width of SVG element
+  let HEIGHT; // Height of SVG element
+
+  // Selection and d3 variables
+
+
+  /*************************************************** Setup Callback Functions ***************************************************/
+
+  // Go to previous/next slide (with wrap) when button pressed
+  window.offsetSlide = function(offset) {
+    // Get input and current slide index
+    const input = d3.select("input");
+    let arrayIndex = parseInt(input.node().value) - 1; // Array index (0-4) is one offset from slide index (1-5)
+    arrayIndex = ((arrayIndex + offset) % DATA.length + DATA.length) % DATA.length;
+
+    // Assign new slide index
+    input.node().value = arrayIndex + 1;
+
+    // Show slide with given index
+    d3.selectAll(".slide")
+      .style("display", "none")
+      .filter(function(d, i) {
+        return i == arrayIndex;
+      })
+      .style("display", "flex");
+  };
+
+
+  // Go to specified slide when number input changed
+  window.goToSlide = function(evt) {
+    // Get input and current slide index
+    const input = d3.select("input");
+    let arrayIndex = parseInt(input.node().value) - 1; // Array index (0-4) is one offset from slide index (1-5)
+    arrayIndex = (arrayIndex % DATA.length + DATA.length) % DATA.length;
+
+    // Assign new slide index
+    input.node().value = arrayIndex + 1;
+
+    // Show slide with given index
+    d3.selectAll(".slide")
+      .style("display", "none")
+      .filter(function(d, i) {
+        return i == arrayIndex;
+      })
+      .style("display", "flex");
+  };
+
+
+  // Attach event for data message from VA
+  va.messagingUtil.setOnDataReceivedCallback(onDataReceived);
+
+  // If not being rendered in iFrame (outside VA), render with sample data
+  if (!inIframe()) {
+    onDataReceived(SAMPLE_MESSAGE);
+  }
+
+  /****************************************************** Callback Functions ******************************************************/
+
+  // Take action on received data
+  function onDataReceived(messageFromVA) {
+    // Initialize data variables
+    VA_RESULT_NAME = messageFromVA.resultName;
+
+    // Validate data roles
+    if (
+      !va.contentUtil.validateRoles(
+        messageFromVA,
+        ["string"],
+        ["datetime", "number"] // Optional datetime role to allow images to be sorted by new
+      )
+    ) {
+      va.messagingUtil.postInstructionalMessage(
+        VA_RESULT_NAME,
+        "D3 Image Viewer expects columns to be assigned in this order:\n" +
+          " 1. URL (string)"
+      );
+      return;
+    }
+
+    // Restructure data from 2d array to array of objects
+    DATA = messageFromVA.data;
+
+    // Update data max value
+    d3.select("input")
+      .attr("max", DATA.length);
+
+    d3.select("span")
+      .html(" / " + DATA.length)
+
+    // Draw gallery whether first message or subsequent
+    drawElements();
+  }
+
+  // Draw elements for first time and on resize event
+  function drawElements() {
+    // Return if data is not yet initialized
+    if (!DATA) {
+      return;
+    }
+
+    // Calculate dimensions for graph based on container dimensions
+    WIDTH = window.innerWidth;
+    HEIGHT = window.innerHeight;
+
+    // Append image containers
+    const SLIDES = d3.select(".slideshow")
+      .selectAll(".slide")
+      .data(DATA, function(d) { return d; });
+
+    SLIDES
+      .enter()
+      .append("div")
+      .classed("slide", true)
+      .style("display", function(d, i) {
+        return i ? "none" : "flex";
+      })
+      .append("img")
+        .attr("src", function(d) {
+          return d;
+        });
+
+    SLIDES.exit().remove();
+
+    // Point to slide 1
+    d3.select("input").node().value = 1;
+    window.goToSlide();
+
+    // Hide ui elements if only one slide
+    d3.selectAll(".slide-ui-el")
+      .style("display", DATA.length == 1 ? "none" : "initial");
+  }
+
+  /******************************************************* Helper Functions *******************************************************/
+
+  // Determine whether or not page is being rendered in iFrame
+  function inIframe() {
+    try {
+      return window.self !== window.top;
+    } catch (e) {
+      return true;
+    }
+  }
+});
+</script>
+</body>
+</html>
