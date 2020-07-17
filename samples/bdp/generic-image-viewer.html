@@ -115,8 +115,8 @@ document.addEventListener("DOMContentLoaded", function() {
   const SAMPLE_MESSAGE = {
     "version": "1",
     "resultName": "dd703",
-    "rowCount": 4,
-    "availableRowCount": 4,
+    "rowCount": 3,
+    "availableRowCount": 3,
     "data": [
         [
             "https://cdn.pixabay.com/photo/2017/03/05/00/34/panorama-2117310_960_720.jpg",
@@ -124,10 +124,6 @@ document.addEventListener("DOMContentLoaded", function() {
         ],
         [
             "https://cdn.pixabay.com/photo/2020/03/11/10/08/camera-4921646_960_720.jpg",
-            "Saturday, June 6, 2020 04:00:00 AM"
-        ],
-        [
-            "https://cdn.pixabay.com/photo/2020/03/09/23/59/istanbul-4917447_960_720.jpg",
             "Saturday, June 6, 2020 04:00:00 AM"
         ],
         [
@@ -270,7 +266,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // Append image containers
     const SLIDES = d3.select(".slideshow")
       .selectAll(".slide")
-      .data(DATA, function(d) { return d; });
+      .data(DATA, function(d) { return d[0]; });
 
     SLIDES
       .enter()
@@ -281,7 +277,7 @@ document.addEventListener("DOMContentLoaded", function() {
       })
       .append("img")
         .attr("src", function(d) {
-          return d;
+          return d[0];
         });
 
     SLIDES.exit().remove();
